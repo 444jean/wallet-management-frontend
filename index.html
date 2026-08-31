@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/wallet.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi Billetera — Gastos, Ingresos y Ahorros</title>
+    <script>
+      // Aplica el tema guardado antes de pintar para evitar el parpadeo (FOUC).
+      (function () {
+        try {
+          var t = localStorage.getItem("wallet-management:theme");
+          if (!t) {
+            t = window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light"
+              : "dark";
+          }
+          var root = document.documentElement;
+          root.classList.toggle("dark", t === "dark");
+          root.style.colorScheme = t;
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
