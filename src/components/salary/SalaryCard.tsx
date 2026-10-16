@@ -9,8 +9,8 @@ export function SalaryCard() {
   const { salary } = useFinance();
 
   return (
-    <Card>
-      <CardContent className="flex flex-wrap items-center justify-between gap-3 p-5">
+    <Card className="justify-center py-5">
+      <CardContent className="flex flex-wrap items-center justify-between gap-3 px-5">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary">
             <Banknote className="h-5 w-5" />

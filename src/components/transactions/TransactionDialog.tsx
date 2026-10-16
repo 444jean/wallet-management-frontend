@@ -34,6 +34,8 @@ interface Props {
   transaction?: Transaction;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  /** New contribution to this savings goal (opens in "Ahorro" mode). */
+  defaultGoalId?: string;
 }
 
 const MODE_STYLES: Record<Mode, string> = {
@@ -52,7 +54,13 @@ function CategoryOption({ category }: { category: string }) {
   );
 }
 
-export function TransactionDialog({ trigger, transaction, open: openProp, onOpenChange }: Props) {
+export function TransactionDialog({
+  trigger,
+  transaction,
+  open: openProp,
+  onOpenChange,
+  defaultGoalId,
+}: Props) {
   const { addTransaction, updateTransaction, goals } = useFinance();
   const formId = useId();
   const [openState, setOpenState] = useState(false);
@@ -79,15 +87,15 @@ export function TransactionDialog({ trigger, transaction, open: openProp, onOpen
       setDescription(transaction.description);
       setDate(transaction.date);
     } else {
-      setMode("expense");
+      setMode(defaultGoalId ? "saving" : "expense");
       setAmount("");
       setCategory("");
-      setGoalId("");
+      setGoalId(defaultGoalId ?? "");
       setDescription("");
       setDate(todayISO());
     }
     setError("");
-  }, [open, transaction]);
+  }, [open, transaction, defaultGoalId]);
 
   const hasGoals = goals.length > 0;
   const categories = mode === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;

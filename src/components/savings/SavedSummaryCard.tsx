@@ -14,8 +14,8 @@ export function SavedSummaryCard() {
   const pct = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0;
 
   return (
-    <Card>
-      <CardContent className="p-5">
+    <Card className="justify-center py-5">
+      <CardContent className="px-5">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/15 text-primary">

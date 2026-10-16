@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Transaction } from "@/types";
 import { useFinance } from "@/hooks/use-finance";
+import { todayISO } from "@/lib/utils";
 
 export interface MonthlyPoint {
   key: string;
@@ -25,7 +26,9 @@ export function useStats() {
 
   return useMemo(() => {
     const now = new Date();
-    const currentKey = now.toISOString().slice(0, 7);
+    // Local month (todayISO), not UTC: in Chile UTC is already the next month
+    // from 21:00 on the last day.
+    const currentKey = todayISO().slice(0, 7);
 
     let totalIncome = 0;
     let totalExpense = 0;
@@ -46,7 +49,7 @@ export function useStats() {
     const months: MonthlyPoint[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.toISOString().slice(0, 7);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       months.push({ key, label: monthLabelFmt.format(d), income: 0, expense: 0 });
     }
     const monthIndex = new Map(months.map((m, idx) => [m.key, idx]));
