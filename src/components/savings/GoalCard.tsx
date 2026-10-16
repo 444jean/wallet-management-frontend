@@ -116,7 +116,7 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
                 </defs>
                 <XAxis
                   dataKey="label"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="var(--muted-foreground)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -124,7 +124,7 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
                   minTickGap={24}
                 />
                 <YAxis
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="var(--muted-foreground)"
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -133,8 +133,8 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
                 />
                 <Tooltip
                   contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
                     borderRadius: 8,
                     fontSize: 12,
                   }}
@@ -142,7 +142,7 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
                 />
                 <ReferenceLine
                   y={goal.target}
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="var(--muted-foreground)"
                   strokeDasharray="4 4"
                   strokeOpacity={0.6}
                 />

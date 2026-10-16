@@ -45,9 +45,9 @@ function StatCard({
 }) {
   const color =
     accent === "income"
-      ? "text-primary"
+      ? "text-income"
       : accent === "expense"
-        ? "text-destructive"
+        ? "text-expense"
         : "text-foreground";
   return (
     <Card>
@@ -98,13 +98,13 @@ export function Dashboard() {
           title="Ingresos del mes"
           value={formatCurrency(stats.monthIncome)}
           accent="income"
-          icon={<ArrowUpRight className="h-5 w-5 text-primary" />}
+          icon={<ArrowUpRight className="h-5 w-5 text-income" />}
         />
         <StatCard
           title="Gastos del mes"
           value={formatCurrency(stats.monthExpense)}
           accent="expense"
-          icon={<ArrowDownLeft className="h-5 w-5 text-destructive" />}
+          icon={<ArrowDownLeft className="h-5 w-5 text-expense" />}
         />
         <StatCard
           title="Ahorro del mes"
@@ -127,13 +127,13 @@ export function Dashboard() {
               <BarChart data={stats.months} barGap={6}>
                 <XAxis
                   dataKey="label"
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="var(--muted-foreground)"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
-                  stroke="hsl(var(--muted-foreground))"
+                  stroke="var(--muted-foreground)"
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
@@ -141,10 +141,10 @@ export function Dashboard() {
                   width={40}
                 />
                 <Tooltip
-                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }}
+                  cursor={{ fill: "var(--muted)", opacity: 0.3 }}
                   contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
+                    background: "var(--popover)",
+                    border: "1px solid var(--border)",
                     borderRadius: 8,
                     fontSize: 12,
                   }}
@@ -153,8 +153,8 @@ export function Dashboard() {
                     name === "income" ? "Ingresos" : "Gastos",
                   ]}
                 />
-                <Bar dataKey="income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expense" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="income" fill="var(--income)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="expense" fill="var(--expense)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -188,8 +188,8 @@ export function Dashboard() {
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        background: "hsl(var(--popover))",
-                        border: "1px solid hsl(var(--border))",
+                        background: "var(--popover)",
+                        border: "1px solid var(--border)",
                         borderRadius: 8,
                         fontSize: 12,
                       }}
@@ -235,13 +235,13 @@ export function Dashboard() {
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-9 w-9 items-center justify-center rounded-full ${
-                      t.type === "income" ? "bg-primary/15" : "bg-destructive/15"
+                      t.type === "income" ? "bg-income/15" : "bg-expense/15"
                     }`}
                   >
                     {t.type === "income" ? (
-                      <ArrowUpRight className="h-4 w-4 text-primary" />
+                      <ArrowUpRight className="h-4 w-4 text-income" />
                     ) : (
-                      <ArrowDownLeft className="h-4 w-4 text-destructive" />
+                      <ArrowDownLeft className="h-4 w-4 text-expense" />
                     )}
                   </div>
                   <div>
@@ -253,7 +253,7 @@ export function Dashboard() {
                   <Badge variant="secondary">{t.category}</Badge>
                   <span
                     className={`text-sm font-semibold ${
-                      t.type === "income" ? "text-primary" : "text-destructive"
+                      t.type === "income" ? "text-income" : "text-expense"
                     }`}
                   >
                     {t.type === "income" ? "+" : "−"}

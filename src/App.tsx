@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { FinanceProvider } from "@/hooks/use-finance";
 import { RequireAuth } from "@/components/auth/RequireAuth";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { AuthPage } from "@/pages/AuthPage";
 import { Dashboard } from "@/pages/Dashboard";
@@ -34,7 +36,10 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <ThemeProvider>
-      <RouterProvider router={router} />
+      <TooltipProvider delayDuration={300}>
+        <RouterProvider router={router} />
+        <Toaster position="top-center" richColors closeButton />
+      </TooltipProvider>
     </ThemeProvider>
   );
 }

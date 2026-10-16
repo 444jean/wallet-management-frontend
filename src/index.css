@@ -1,70 +1,161 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 160 84% 39%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 160 84% 39%;
-    --success-foreground: 0 0% 100%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 160 84% 39%;
-    --radius: 0.65rem;
-  }
+@custom-variant dark (&:is(.dark *));
 
-  .dark {
-    --background: 222.2 47% 6%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 44% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 44% 9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 158 70% 45%;
-    --primary-foreground: 222.2 47.4% 8%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 158 70% 45%;
-    --success-foreground: 222.2 47.4% 8%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 158 70% 45%;
-  }
+/*
+ * Mi Billetera palette
+ * - Light: deep purple on white.
+ * - Dark: purple on black.
+ * Income (green) and expense (red) keep their meaning in both themes.
+ */
+:root {
+  --radius: 0.75rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.03 300);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.03 300);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.03 300);
+  --primary: oklch(0.38 0.18 294);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.015 300);
+  --secondary-foreground: oklch(0.3 0.12 294);
+  --muted: oklch(0.965 0.01 300);
+  --muted-foreground: oklch(0.5 0.03 300);
+  --accent: oklch(0.95 0.025 300);
+  --accent-foreground: oklch(0.3 0.12 294);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.91 0.015 300);
+  --input: oklch(0.91 0.015 300);
+  --ring: oklch(0.38 0.18 294);
+
+  --income: oklch(0.6 0.15 160);
+  --income-foreground: oklch(0.99 0 0);
+  --expense: oklch(0.577 0.22 27);
+  --expense-foreground: oklch(0.99 0 0);
+
+  --chart-1: oklch(0.38 0.18 294);
+  --chart-2: oklch(0.6 0.15 160);
+  --chart-3: oklch(0.577 0.22 27);
+  --chart-4: oklch(0.62 0.19 300);
+  --chart-5: oklch(0.75 0.12 310);
+
+  --sidebar: oklch(0.985 0.006 300);
+  --sidebar-foreground: oklch(0.18 0.03 300);
+  --sidebar-primary: oklch(0.38 0.18 294);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.95 0.025 300);
+  --sidebar-accent-foreground: oklch(0.3 0.12 294);
+  --sidebar-border: oklch(0.91 0.015 300);
+  --sidebar-ring: oklch(0.38 0.18 294);
+}
+
+.dark {
+  --background: oklch(0.13 0.012 300);
+  --foreground: oklch(0.97 0.005 300);
+  --card: oklch(0.17 0.02 300);
+  --card-foreground: oklch(0.97 0.005 300);
+  --popover: oklch(0.17 0.02 300);
+  --popover-foreground: oklch(0.97 0.005 300);
+  --primary: oklch(0.6 0.22 293);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.23 0.04 298);
+  --secondary-foreground: oklch(0.97 0.005 300);
+  --muted: oklch(0.22 0.025 300);
+  --muted-foreground: oklch(0.7 0.03 300);
+  --accent: oklch(0.25 0.05 298);
+  --accent-foreground: oklch(0.97 0.005 300);
+  --destructive: oklch(0.65 0.2 25);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.6 0.22 293);
+
+  --income: oklch(0.72 0.17 160);
+  --income-foreground: oklch(0.15 0.02 160);
+  --expense: oklch(0.68 0.2 25);
+  --expense-foreground: oklch(0.15 0.02 25);
+
+  --chart-1: oklch(0.6 0.22 293);
+  --chart-2: oklch(0.72 0.17 160);
+  --chart-3: oklch(0.68 0.2 25);
+  --chart-4: oklch(0.72 0.15 300);
+  --chart-5: oklch(0.5 0.15 290);
+
+  --sidebar: oklch(0.1 0.01 300);
+  --sidebar-foreground: oklch(0.97 0.005 300);
+  --sidebar-primary: oklch(0.6 0.22 293);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.22 0.04 298);
+  --sidebar-accent-foreground: oklch(0.97 0.005 300);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.6 0.22 293);
+}
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-income: var(--income);
+  --color-income-foreground: var(--income-foreground);
+  --color-expense: var(--expense);
+  --color-expense-foreground: var(--expense-foreground);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* Crossfade suave de colores al cambiar de tema (fallback y suavizado general).
-   Solo activo durante el cambio para no ralentizar los hover normales. */
+/* Bottom space for the mobile nav, including the iPhone home indicator. */
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Smooth color crossfade while switching theme (only during the switch, so
+   regular hovers stay fast). */
 .theme-transition,
 .theme-transition *,
 .theme-transition *::before,
@@ -78,8 +169,8 @@
   transition-delay: 0ms !important;
 }
 
-/* Reveal circular con la View Transitions API: dejamos que el clip-path por JS
-   haga la animación y desactivamos el crossfade por defecto del navegador. */
+/* Circular reveal with the View Transitions API: the JS clip-path drives the
+   animation, so the browser's default crossfade is disabled. */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;

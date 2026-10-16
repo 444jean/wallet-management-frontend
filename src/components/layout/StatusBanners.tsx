@@ -1,31 +1,22 @@
-import { useState } from "react";
-import { AlertCircle, Upload, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
+import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useFinance } from "@/hooks/use-finance";
 import { clearLegacyData, readLegacyData } from "@/lib/storage";
 
-/** Error from the last API call. */
-function ErrorBanner() {
+/** Shows the last API error as a toast. */
+function ErrorToasts() {
   const { error, clearError } = useFinance();
-  if (!error) return null;
 
-  return (
-    <div
-      role="alert"
-      className="mb-6 flex items-start gap-3 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm"
-    >
-      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-      <p className="flex-1">{error}</p>
-      <button
-        type="button"
-        onClick={clearError}
-        className="text-muted-foreground hover:text-foreground"
-        aria-label="Cerrar"
-      >
-        <X className="h-4 w-4" />
-      </button>
-    </div>
-  );
+  useEffect(() => {
+    if (!error) return;
+    toast.error(error);
+    clearError();
+  }, [error, clearError]);
+
+  return null;
 }
 
 /** Offers to move data saved by the old localStorage-only version. */
@@ -45,31 +36,35 @@ function ImportBanner() {
     if (!ok) return;
     clearLegacyData();
     setLegacy(null);
+    toast.success("Datos importados a tu cuenta.");
   }
 
   return (
-    <div className="mb-6 flex flex-col gap-3 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-sm sm:flex-row sm:items-center">
-      <Upload className="hidden h-4 w-4 shrink-0 text-primary sm:block" />
-      <p className="flex-1">
-        Encontramos datos guardados en este navegador ({legacy.transactions.length} movimientos,{" "}
-        {legacy.goals.length} metas). ¿Quieres pasarlos a tu cuenta?
-      </p>
-      <div className="flex gap-2">
-        <Button size="sm" variant="ghost" onClick={() => setLegacy(null)}>
-          Ahora no
-        </Button>
-        <Button size="sm" onClick={handleImport} disabled={importing}>
-          Importar
-        </Button>
-      </div>
-    </div>
+    <Alert className="mb-6 border-primary/30 bg-primary/5">
+      <Upload />
+      <AlertTitle>Tienes datos guardados en este navegador</AlertTitle>
+      <AlertDescription>
+        <p>
+          {legacy.transactions.length} movimientos y {legacy.goals.length} metas de la versión
+          anterior. ¿Quieres pasarlos a tu cuenta?
+        </p>
+        <div className="mt-3 flex gap-2">
+          <Button size="sm" onClick={handleImport} disabled={importing}>
+            Importar
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setLegacy(null)}>
+            Ahora no
+          </Button>
+        </div>
+      </AlertDescription>
+    </Alert>
   );
 }
 
 export function StatusBanners() {
   return (
     <>
-      <ErrorBanner />
+      <ErrorToasts />
       <ImportBanner />
     </>
   );

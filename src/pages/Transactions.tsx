@@ -81,13 +81,13 @@ export function Transactions() {
                   <div className="flex min-w-0 items-center gap-3">
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        t.type === "income" ? "bg-primary/15" : "bg-destructive/15"
+                        t.type === "income" ? "bg-income/15" : "bg-expense/15"
                       }`}
                     >
                       {t.type === "income" ? (
-                        <ArrowUpRight className="h-4 w-4 text-primary" />
+                        <ArrowUpRight className="h-4 w-4 text-income" />
                       ) : (
-                        <ArrowDownLeft className="h-4 w-4 text-destructive" />
+                        <ArrowDownLeft className="h-4 w-4 text-expense" />
                       )}
                     </div>
                     <div className="min-w-0">
@@ -102,7 +102,7 @@ export function Transactions() {
                     </Badge>
                     <span
                       className={`whitespace-nowrap text-sm font-semibold ${
-                        t.type === "income" ? "text-primary" : "text-destructive"
+                        t.type === "income" ? "text-income" : "text-expense"
                       }`}
                     >
                       {t.type === "income" ? "+" : "−"}
