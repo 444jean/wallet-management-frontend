@@ -45,7 +45,7 @@ export function AppLayout() {
             </div>
             <span className="text-sm font-semibold">Mi Billetera</span>
           </div>
-          <h1 className="hidden text-sm font-medium md:block">{current?.label}</h1>
+          <span className="hidden text-sm font-medium md:block">{current?.label}</span>
           <ThemeToggle className="ml-auto" />
         </header>
 
