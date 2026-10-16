@@ -8,150 +8,102 @@ import {
   type ReactNode,
 } from "react";
 import type { FinanceData, SalaryConfig, SavingsGoal, Transaction } from "@/types";
-import { loadData, saveData } from "@/lib/storage";
-import { currentMonthKey, reconcileSalary } from "@/lib/recurring";
-import { uid } from "@/lib/utils";
+import { api, ApiError, json } from "@/lib/api";
 
 interface FinanceContextValue {
   transactions: Transaction[];
   goals: SavingsGoal[];
   salary: SalaryConfig | null;
-  addTransaction: (tx: Omit<Transaction, "id">) => void;
-  updateTransaction: (id: string, tx: Omit<Transaction, "id">) => void;
-  deleteTransaction: (id: string) => void;
-  addGoal: (goal: Omit<SavingsGoal, "id">) => void;
-  updateGoal: (id: string, goal: Omit<SavingsGoal, "id">) => void;
-  deleteGoal: (id: string) => void;
-  setSalary: (config: SalaryConfig) => void;
-  clearSalary: () => void;
-  resetAll: () => void;
+  /** True until the first snapshot arrives. */
+  loading: boolean;
+  /** Last failed operation, shown as a banner. */
+  error: string | null;
+  clearError: () => void;
+  // Mutations resolve to false when they fail; the reason is in `error`.
+  addTransaction: (tx: Omit<Transaction, "id">) => Promise<boolean>;
+  updateTransaction: (id: string, tx: Omit<Transaction, "id">) => Promise<boolean>;
+  deleteTransaction: (id: string) => Promise<boolean>;
+  addGoal: (goal: Omit<SavingsGoal, "id">) => Promise<boolean>;
+  updateGoal: (id: string, goal: Omit<SavingsGoal, "id">) => Promise<boolean>;
+  deleteGoal: (id: string) => Promise<boolean>;
+  setSalary: (config: SalaryConfig) => Promise<boolean>;
+  clearSalary: () => Promise<boolean>;
+  resetAll: () => Promise<boolean>;
+  importData: (data: FinanceData) => Promise<boolean>;
 }
 
 const FinanceContext = createContext<FinanceContextValue | null>(null);
 
-function adjustGoalCurrent(
-  goals: SavingsGoal[],
-  goalId: string,
-  delta: number,
-): SavingsGoal[] {
-  return goals.map((g) =>
-    g.id === goalId ? { ...g, current: Math.max(0, g.current + delta) } : g,
-  );
+const EMPTY: FinanceData = { transactions: [], goals: [], salary: null };
+
+function transactionBody(tx: Omit<Transaction, "id">) {
+  // `goalId: null` explicitly un-links a transaction that stopped being a
+  // goal contribution (PATCH keeps fields that are omitted).
+  const { type, amount, category, description, date, goalId } = tx;
+  return json({ type, amount, category, description, date, goalId: goalId || null });
+}
+
+function goalBody(goal: Omit<SavingsGoal, "id">) {
+  return json({ ...goal, deadline: goal.deadline || null });
 }
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<FinanceData>(() => reconcileSalary(loadData()));
+  const [data, setData] = useState<FinanceData>(EMPTY);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(async () => {
+    setData(await api<FinanceData>("/finance"));
+  }, []);
+
+  /** Runs a request, refreshes the data and reports failures in `error`. */
+  const run = useCallback(
+    async (request: () => Promise<unknown>): Promise<boolean> => {
+      try {
+        await request();
+        await refresh();
+        return true;
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "No se pudo completar la operación.");
+        if (e instanceof ApiError && e.status === 401) window.location.assign("/login");
+        return false;
+      }
+    },
+    [refresh],
+  );
 
   useEffect(() => {
-    saveData(data);
-  }, [data]);
-
-  const addTransaction = useCallback((tx: Omit<Transaction, "id">) => {
-    setData((d) => {
-      const created = { ...tx, id: uid() };
-      const goals = created.goalId
-        ? adjustGoalCurrent(d.goals, created.goalId, created.amount)
-        : d.goals;
-      return { ...d, transactions: [created, ...d.transactions], goals };
-    });
-  }, []);
-
-  const updateTransaction = useCallback((id: string, tx: Omit<Transaction, "id">) => {
-    setData((d) => {
-      const prev = d.transactions.find((t) => t.id === id);
-      const updated = { ...tx, id };
-      let goals = d.goals;
-      // Revertimos el aporte anterior (si lo había) y aplicamos el nuevo.
-      if (prev?.goalId) goals = adjustGoalCurrent(goals, prev.goalId, -prev.amount);
-      if (updated.goalId) goals = adjustGoalCurrent(goals, updated.goalId, updated.amount);
-      return {
-        ...d,
-        transactions: d.transactions.map((t) => (t.id === id ? updated : t)),
-        goals,
-      };
-    });
-  }, []);
-
-  const deleteTransaction = useCallback((id: string) => {
-    setData((d) => {
-      const prev = d.transactions.find((t) => t.id === id);
-      const goals = prev?.goalId
-        ? adjustGoalCurrent(d.goals, prev.goalId, -prev.amount)
-        : d.goals;
-      return { ...d, transactions: d.transactions.filter((t) => t.id !== id), goals };
-    });
-  }, []);
-
-  const addGoal = useCallback((goal: Omit<SavingsGoal, "id">) => {
-    setData((d) => ({ ...d, goals: [...d.goals, { ...goal, id: uid() }] }));
-  }, []);
-
-  const updateGoal = useCallback((id: string, goal: Omit<SavingsGoal, "id">) => {
-    setData((d) => ({
-      ...d,
-      goals: d.goals.map((g) => (g.id === id ? { ...goal, id } : g)),
-    }));
-  }, []);
-
-  const deleteGoal = useCallback((id: string) => {
-    setData((d) => ({ ...d, goals: d.goals.filter((g) => g.id !== id) }));
-  }, []);
-
-  const setSalary = useCallback((config: SalaryConfig) => {
-    setData((d) => {
-      const key = currentMonthKey();
-      // Actualizamos el sueldo ya generado para el mes en curso, para que la
-      // edición se refleje de inmediato; los meses pasados quedan como historial.
-      const transactions = d.transactions.map((t) =>
-        t.source === "salary" && t.date.slice(0, 7) === key
-          ? {
-              ...t,
-              amount: config.amount,
-              category: config.category,
-              description: config.description,
-            }
-          : t,
-      );
-      return reconcileSalary({ ...d, salary: config, transactions });
-    });
-  }, []);
-
-  const clearSalary = useCallback(() => {
-    // Mantenemos el historial ya registrado; solo dejamos de generar nuevos.
-    setData((d) => ({ ...d, salary: null }));
-  }, []);
-
-  const resetAll = useCallback(() => {
-    setData({ transactions: [], goals: [], salary: null });
-  }, []);
+    void run(async () => undefined).finally(() => setLoading(false));
+  }, [run]);
 
   const value = useMemo<FinanceContextValue>(
     () => ({
-      transactions: data.transactions,
-      goals: data.goals,
-      salary: data.salary,
-      addTransaction,
-      updateTransaction,
-      deleteTransaction,
-      addGoal,
-      updateGoal,
-      deleteGoal,
-      setSalary,
-      clearSalary,
-      resetAll,
+      ...data,
+      loading,
+      error,
+      clearError: () => setError(null),
+      addTransaction: (tx) =>
+        run(() => api("/transactions", { method: "POST", body: transactionBody(tx) })),
+      updateTransaction: (id, tx) =>
+        run(() => api(`/transactions/${id}`, { method: "PATCH", body: transactionBody(tx) })),
+      deleteTransaction: (id) => run(() => api(`/transactions/${id}`, { method: "DELETE" })),
+      addGoal: (goal) => run(() => api("/goals", { method: "POST", body: goalBody(goal) })),
+      updateGoal: (id, goal) =>
+        run(() => api(`/goals/${id}`, { method: "PATCH", body: goalBody(goal) })),
+      deleteGoal: (id) => run(() => api(`/goals/${id}`, { method: "DELETE" })),
+      setSalary: (config) => run(() => api("/salary", { method: "PUT", body: json(config) })),
+      clearSalary: () => run(() => api("/salary", { method: "DELETE" })),
+      resetAll: () => run(() => api("/finance", { method: "DELETE" })),
+      importData: (imported) =>
+        run(() =>
+          api("/finance/import", {
+            method: "POST",
+            // Never overwrites: the server answers 409 if the account has data.
+            body: json({ ...imported, replace: false }),
+          }),
+        ),
     }),
-    [
-      data,
-      addTransaction,
-      updateTransaction,
-      deleteTransaction,
-      addGoal,
-      updateGoal,
-      deleteGoal,
-      setSalary,
-      clearSalary,
-      resetAll,
-    ],
+    [data, loading, error, run],
   );
 
   return <FinanceContext.Provider value={value}>{children}</FinanceContext.Provider>;

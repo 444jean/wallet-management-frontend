@@ -1,6 +1,9 @@
 import { NavLink, Outlet } from "react-router-dom";
-import { LayoutDashboard, ArrowRightLeft, PiggyBank, Wallet } from "lucide-react";
+import { LayoutDashboard, ArrowRightLeft, PiggyBank, Loader2, Wallet } from "lucide-react";
+import { StatusBanners } from "@/components/layout/StatusBanners";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { UserMenu } from "@/components/layout/UserMenu";
+import { useFinance } from "@/hooks/use-finance";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -10,6 +13,8 @@ const navItems = [
 ];
 
 export function AppLayout() {
+  const { loading } = useFinance();
+
   return (
     <div className="min-h-screen lg:flex">
       <aside className="hidden w-64 shrink-0 border-r bg-card/40 lg:flex lg:flex-col">
@@ -42,9 +47,12 @@ export function AppLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto flex items-center justify-between px-5 py-4">
-          <span className="text-xs text-muted-foreground">Tema</span>
-          <ThemeToggle />
+        <div className="mt-auto space-y-3 border-t px-5 py-4">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">Tema</span>
+            <ThemeToggle />
+          </div>
+          <UserMenu />
         </div>
       </aside>
 
@@ -56,11 +64,21 @@ export function AppLayout() {
             </div>
             <p className="text-sm font-semibold">Mi Billetera</p>
           </div>
-          <ThemeToggle />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <UserMenu compact />
+          </div>
         </header>
 
         <main className="mx-auto max-w-6xl px-4 py-6 pb-24 lg:px-8 lg:py-8">
-          <Outlet />
+          <StatusBanners />
+          {loading ? (
+            <div className="flex justify-center py-24 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
 
