@@ -1,138 +1,315 @@
 import { useMemo, useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { MoreHorizontal, Pencil, Plus, Receipt, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { TransactionDialog } from "@/components/transactions/TransactionDialog";
+import { TransactionAmount, TransactionIcon } from "@/components/transactions/TransactionParts";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFinance } from "@/hooks/use-finance";
 import { sortByDateDesc } from "@/hooks/use-stats";
+import { dayLabel } from "@/lib/dates";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import type { TransactionType } from "@/types";
+import type { Transaction, TransactionType } from "@/types";
 
 type Filter = "all" | TransactionType;
+
+const SHEET_CLOSE_MS = 300;
+
+function groupByDay(transactions: Transaction[]) {
+  const groups: { date: string; items: Transaction[] }[] = [];
+  for (const t of transactions) {
+    const last = groups[groups.length - 1];
+    if (last?.date === t.date) last.items.push(t);
+    else groups.push({ date: t.date, items: [t] });
+  }
+  return groups;
+}
 
 export function Transactions() {
   const { transactions, deleteTransaction } = useFinance();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
+  // Target and open flag are separate so the content doesn't change while a
+  // dialog plays its closing animation.
+  const [target, setTarget] = useState<Transaction | null>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  function openActions(t: Transaction) {
+    setTarget(t);
+    setActionsOpen(true);
+  }
+  function openEdit(t: Transaction) {
+    setTarget(t);
+    setEditOpen(true);
+  }
+  function openDelete(t: Transaction) {
+    setTarget(t);
+    setDeleteOpen(true);
+  }
+  /** From the phone action sheet: let it finish closing before opening the next one. */
+  function fromActions(next: (t: Transaction) => void) {
+    const t = target;
+    setActionsOpen(false);
+    if (t) window.setTimeout(() => next(t), SHEET_CLOSE_MS);
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return [...transactions]
       .sort(sortByDateDesc)
-      .filter((t) => (filter === "all" ? true : t.type === filter))
+      .filter((t) => filter === "all" || t.type === filter)
       .filter(
         (t) =>
-          !q ||
-          t.description.toLowerCase().includes(q) ||
-          t.category.toLowerCase().includes(q),
+          !q || t.description.toLowerCase().includes(q) || t.category.toLowerCase().includes(q),
       );
   }, [transactions, filter, query]);
 
+  const totals = useMemo(() => {
+    let income = 0;
+    let expense = 0;
+    for (const t of filtered) {
+      if (t.type === "income") income += t.amount;
+      else expense += t.amount;
+    }
+    return { income, expense };
+  }, [filtered]);
+
+  async function confirmDelete() {
+    if (!target) return false;
+    const ok = await deleteTransaction(target.id);
+    if (ok) toast.success("Movimiento eliminado");
+    return ok;
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-5">
+      <div className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Transacciones</h1>
-          <p className="text-sm text-muted-foreground">
-            Todos tus ingresos y gastos en un solo lugar.
-          </p>
+          <p className="text-sm text-muted-foreground">Todos tus ingresos y gastos.</p>
         </div>
+        {/* On phones the central "+" of the bottom bar does this. */}
         <TransactionDialog
           trigger={
-            <Button>
-              <Plus className="h-4 w-4" /> Nuevo movimiento
+            <Button className="hidden md:inline-flex">
+              <Plus /> Nuevo movimiento
             </Button>
           }
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Tabs value={filter} onValueChange={(v) => setFilter(v as Filter)}>
-          <TabsList>
+          <TabsList className="grid w-full grid-cols-3 sm:w-auto">
             <TabsTrigger value="all">Todos</TabsTrigger>
             <TabsTrigger value="income">Ingresos</TabsTrigger>
             <TabsTrigger value="expense">Gastos</TabsTrigger>
           </TabsList>
         </Tabs>
-        <Input
-          placeholder="Buscar por descripción o categoría…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="max-w-xs"
-        />
+        <div className="relative sm:max-w-xs sm:flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Buscar descripción o categoría"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
       </div>
 
-      <Card>
-        <CardContent className="p-2 sm:p-3">
-          {filtered.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">
-              No hay movimientos que coincidan.
-            </p>
-          ) : (
-            <div className="divide-y divide-border">
-              {filtered.map((t) => (
-                <div
-                  key={t.id}
-                  className="group flex items-center justify-between gap-3 px-2 py-3"
-                >
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div
-                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                        t.type === "income" ? "bg-income/15" : "bg-expense/15"
-                      }`}
-                    >
-                      {t.type === "income" ? (
-                        <ArrowUpRight className="h-4 w-4 text-income" />
-                      ) : (
-                        <ArrowDownLeft className="h-4 w-4 text-expense" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{t.description}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(t.date)}</p>
-                    </div>
-                  </div>
+      {filtered.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {filtered.length} {filtered.length === 1 ? "movimiento" : "movimientos"} ·{" "}
+          <span className="text-income">+{formatCurrency(totals.income)}</span> ·{" "}
+          <span className="text-expense">−{formatCurrency(totals.expense)}</span>
+        </p>
+      )}
 
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <Badge variant="secondary" className="hidden sm:inline-flex">
-                      {t.category}
-                    </Badge>
-                    <span
-                      className={`whitespace-nowrap text-sm font-semibold ${
-                        t.type === "income" ? "text-income" : "text-expense"
-                      }`}
-                    >
-                      {t.type === "income" ? "+" : "−"}
-                      {formatCurrency(t.amount)}
-                    </span>
-                    <div className="flex items-center opacity-0 transition-opacity group-hover:opacity-100">
-                      <TransactionDialog
-                        transaction={t}
-                        trigger={
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        }
-                      />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={() => deleteTransaction(t.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center gap-3 py-14 text-center">
+            <div className="flex size-12 items-center justify-center rounded-full bg-muted">
+              <Receipt className="size-5 text-muted-foreground" />
             </div>
+            <p className="text-sm text-muted-foreground">
+              {transactions.length === 0
+                ? "Aún no tienes movimientos. Agrega el primero con el botón +."
+                : "No hay movimientos que coincidan."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Phones: grouped by day, tap a row to see its actions. */}
+          <div className="space-y-4 md:hidden">
+            {groupByDay(filtered).map((group) => (
+              <section key={group.date}>
+                <h2 className="mb-1.5 px-1 text-xs font-medium text-muted-foreground">
+                  {dayLabel(group.date)}
+                </h2>
+                <Card className="gap-0 py-0">
+                  <ul className="divide-y">
+                    {group.items.map((t) => (
+                      <li key={t.id}>
+                        <button
+                          type="button"
+                          onClick={() => openActions(t)}
+                          className="flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left transition-colors active:bg-accent"
+                        >
+                          <TransactionIcon transaction={t} />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium">{t.description}</p>
+                            <p className="truncate text-xs text-muted-foreground">{t.category}</p>
+                          </div>
+                          <TransactionAmount transaction={t} className="text-sm" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </Card>
+              </section>
+            ))}
+          </div>
+
+          {/* Larger screens: table with a row menu. */}
+          <Card className="hidden py-0 md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="pl-4">Descripción</TableHead>
+                  <TableHead>Categoría</TableHead>
+                  <TableHead>Fecha</TableHead>
+                  <TableHead className="text-right">Monto</TableHead>
+                  <TableHead className="w-12 pr-4" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="pl-4">
+                      <div className="flex items-center gap-3">
+                        <TransactionIcon transaction={t} className="size-8" />
+                        <span className="max-w-xs truncate font-medium">{t.description}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{t.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(t.date)}</TableCell>
+                    <TableCell className="text-right">
+                      <TransactionAmount transaction={t} />
+                    </TableCell>
+                    <TableCell className="pr-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="size-8" aria-label="Acciones">
+                            <MoreHorizontal />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onSelect={() => openEdit(t)}>
+                            <Pencil /> Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem variant="destructive" onSelect={() => openDelete(t)}>
+                            <Trash2 /> Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
+      )}
+
+      {/* Phone action sheet for the tapped transaction. */}
+      <Drawer open={actionsOpen} onOpenChange={setActionsOpen}>
+        <DrawerContent>
+          {target && (
+            <>
+              <DrawerHeader className="items-center text-center">
+                <TransactionIcon transaction={target} className="size-12" />
+                <DrawerTitle>{target.description}</DrawerTitle>
+                <DrawerDescription>
+                  {target.category} · {formatDate(target.date)}
+                </DrawerDescription>
+                <TransactionAmount transaction={target} className="text-2xl" />
+              </DrawerHeader>
+              <DrawerFooter className="pb-safe">
+                <Button
+                  size="lg"
+                  onClick={() => fromActions(openEdit)}
+                >
+                  <Pencil /> Editar
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="text-destructive"
+                  onClick={() => fromActions(openDelete)}
+                >
+                  <Trash2 /> Eliminar
+                </Button>
+                <DrawerClose asChild>
+                  <Button size="lg" variant="ghost">
+                    Cancelar
+                  </Button>
+                </DrawerClose>
+              </DrawerFooter>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </DrawerContent>
+      </Drawer>
+
+      {target && (
+        <TransactionDialog transaction={target} open={editOpen} onOpenChange={setEditOpen} />
+      )}
+
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="¿Eliminar este movimiento?"
+        description={
+          target
+            ? `"${target.description}" por ${formatCurrency(target.amount)}. Esta acción no se puede deshacer.`
+            : ""
+        }
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

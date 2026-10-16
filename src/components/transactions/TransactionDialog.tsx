@@ -1,14 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { PiggyBank } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { useEffect, useId, useState, type ReactNode } from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { AmountInput } from "@/components/common/AmountInput";
+import { DatePicker } from "@/components/common/DatePicker";
+import { ResponsiveDialog } from "@/components/common/ResponsiveDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,217 +14,228 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFinance } from "@/hooks/use-finance";
-import { todayISO } from "@/lib/utils";
+import { categoryIcon } from "@/lib/categories";
+import { cn, todayISO } from "@/lib/utils";
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   SAVINGS_CATEGORY,
   type Transaction,
-  type TransactionType,
 } from "@/types";
 
+/** "saving" = expense that is a contribution to a savings goal. */
+type Mode = "expense" | "income" | "saving";
+
 interface Props {
-  trigger: ReactNode;
+  /** Element that opens the dialog. Omit it to control `open` from outside. */
+  trigger?: ReactNode;
   transaction?: Transaction;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function TransactionDialog({ trigger, transaction }: Props) {
-  const { addTransaction, updateTransaction, goals } = useFinance();
-  const [open, setOpen] = useState(false);
+const MODE_STYLES: Record<Mode, string> = {
+  expense: "data-[state=on]:bg-expense/15 data-[state=on]:text-expense",
+  income: "data-[state=on]:bg-income/15 data-[state=on]:text-income",
+  saving: "data-[state=on]:bg-primary/15 data-[state=on]:text-primary",
+};
 
-  const [type, setType] = useState<TransactionType>("expense");
+function CategoryOption({ category }: { category: string }) {
+  const Icon = categoryIcon(category);
+  return (
+    <span className="flex items-center gap-2">
+      <Icon className="size-4 text-muted-foreground" />
+      {category}
+    </span>
+  );
+}
+
+export function TransactionDialog({ trigger, transaction, open: openProp, onOpenChange }: Props) {
+  const { addTransaction, updateTransaction, goals } = useFinance();
+  const formId = useId();
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = onOpenChange ?? setOpenState;
+
+  const [mode, setMode] = useState<Mode>("expense");
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("");
+  const [goalId, setGoalId] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(todayISO());
-  const [isSaving, setIsSaving] = useState(false);
-  const [goalId, setGoalId] = useState("");
   const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  // Inicializa el formulario al abrir.
+  // Reset the form every time it opens.
   useEffect(() => {
     if (!open) return;
     if (transaction) {
-      setType(transaction.type);
+      setMode(transaction.goalId ? "saving" : transaction.type);
       setAmount(String(transaction.amount));
-      setCategory(transaction.category);
+      setCategory(transaction.goalId ? "" : transaction.category);
+      setGoalId(transaction.goalId ?? "");
       setDescription(transaction.description);
       setDate(transaction.date);
-      setIsSaving(Boolean(transaction.goalId));
-      setGoalId(transaction.goalId ?? "");
     } else {
-      setType("expense");
+      setMode("expense");
       setAmount("");
       setCategory("");
+      setGoalId("");
       setDescription("");
       setDate(todayISO());
-      setIsSaving(false);
-      setGoalId("");
     }
     setError("");
   }, [open, transaction]);
 
-  const categories = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-  const canSaveToGoal = type === "expense" && goals.length > 0;
-  const savingToGoal = canSaveToGoal && isSaving;
+  const hasGoals = goals.length > 0;
+  const categories = mode === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const value = Number(amount);
-    if (!value || value <= 0) return setError("Ingresa un monto mayor a 0.");
+    if (!value) return setError("Ingresa un monto mayor a 0.");
 
-    if (savingToGoal) {
-      if (!goalId) return setError("Selecciona la meta de ahorro.");
+    let payload: Omit<Transaction, "id">;
+    if (mode === "saving") {
+      if (!goalId) return setError("Elige la meta de ahorro.");
       const goalName = goals.find((g) => g.id === goalId)?.name ?? "ahorro";
-      const payload = {
-        type: "expense" as const,
+      payload = {
+        type: "expense",
         amount: value,
         category: SAVINGS_CATEGORY,
         description: description.trim() || `Aporte a ${goalName}`,
         date,
         goalId,
       };
-      if (transaction) updateTransaction(transaction.id, payload);
-      else addTransaction(payload);
-      setOpen(false);
-      return;
+    } else {
+      if (!category) return setError("Elige una categoría.");
+      payload = {
+        type: mode,
+        amount: value,
+        category,
+        description: description.trim() || category,
+        date,
+      };
     }
 
-    if (!category) return setError("Selecciona una categoría.");
-    const payload = {
-      type,
-      amount: value,
-      category,
-      description: description.trim() || category,
-      date
-    };
-    if (transaction) updateTransaction(transaction.id, payload);
-    else addTransaction(payload);
+    setSaving(true);
+    const ok = transaction
+      ? await updateTransaction(transaction.id, payload)
+      : await addTransaction(payload);
+    setSaving(false);
+    if (!ok) return;
+    toast.success(transaction ? "Movimiento actualizado" : "Movimiento agregado");
     setOpen(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{transaction ? "Editar movimiento" : "Nuevo movimiento"}</DialogTitle>
-          <DialogDescription>
-            Registra un ingreso, un gasto o un aporte a tus ahorros.
-          </DialogDescription>
-        </DialogHeader>
+    <ResponsiveDialog
+      open={open}
+      onOpenChange={setOpen}
+      trigger={trigger}
+      title={transaction ? "Editar movimiento" : "Nuevo movimiento"}
+      description="Registra un gasto, un ingreso o un aporte a tus ahorros."
+      footer={
+        <Button type="submit" form={formId} disabled={saving} className="w-full sm:w-auto">
+          {saving && <Loader2 className="animate-spin" />}
+          {transaction ? "Guardar cambios" : "Agregar"}
+        </Button>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className="space-y-4 pb-2">
+        <ToggleGroup
+          type="single"
+          variant="outline"
+          value={mode}
+          onValueChange={(v) => {
+            if (!v) return;
+            setMode(v as Mode);
+            setCategory("");
+            setError("");
+          }}
+          className="w-full"
+        >
+          <ToggleGroupItem value="expense" className={cn("h-10 flex-1", MODE_STYLES.expense)}>
+            Gasto
+          </ToggleGroupItem>
+          <ToggleGroupItem value="income" className={cn("h-10 flex-1", MODE_STYLES.income)}>
+            Ingreso
+          </ToggleGroupItem>
+          {(hasGoals || mode === "saving") && (
+            <ToggleGroupItem value="saving" className={cn("h-10 flex-1", MODE_STYLES.saving)}>
+              Ahorro
+            </ToggleGroupItem>
+          )}
+        </ToggleGroup>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Tabs
-            value={type}
-            onValueChange={(v) => {
-              setType(v as TransactionType);
-              setCategory("");
-              if (v === "income") setIsSaving(false);
-            }}
-          >
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="expense">Gasto</TabsTrigger>
-              <TabsTrigger value="income">Ingreso</TabsTrigger>
-            </TabsList>
-          </Tabs>
+        <div className="space-y-2">
+          <Label htmlFor={`${formId}-amount`}>Monto</Label>
+          <AmountInput
+            id={`${formId}-amount`}
+            value={amount}
+            onChange={setAmount}
+            className="h-12 text-lg font-semibold"
+          />
+        </div>
 
+        {mode === "saving" ? (
           <div className="space-y-2">
-            <Label htmlFor="amount">Monto</Label>
-            <Input
-              id="amount"
-              type="number"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              placeholder="0"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              autoFocus
-            />
+            <Label>Meta de ahorro</Label>
+            <Select value={goalId} onValueChange={setGoalId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Elige la meta" />
+              </SelectTrigger>
+              <SelectContent>
+                {goals.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          {canSaveToGoal && (
-            <label className="flex cursor-pointer items-center gap-3 rounded-md border p-3 transition-colors hover:bg-accent/50">
-              <input
-                type="checkbox"
-                checked={isSaving}
-                onChange={(e) => setIsSaving(e.target.checked)}
-                className="h-4 w-4 accent-primary"
-              />
-              <PiggyBank className="h-4 w-4 text-primary" />
-              <div className="leading-tight">
-                <p className="text-sm font-medium">Destinar a una meta de ahorro</p>
-                <p className="text-xs text-muted-foreground">
-                  Suma este monto al ahorro que elijas.
-                </p>
-              </div>
-            </label>
-          )}
-
-          {savingToGoal ? (
-            <div className="space-y-2">
-              <Label>Meta de ahorro</Label>
-              <Select value={goalId} onValueChange={setGoalId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona la meta" />
-                </SelectTrigger>
-                <SelectContent>
-                  {goals.map((g) => (
-                    <SelectItem key={g.id} value={g.id}>
-                      {g.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label>Categoría</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
+        ) : (
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción (opcional)</Label>
+            <Label>Categoría</Label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Elige una categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                {categories.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    <CategoryOption category={c} />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor={`${formId}-date`}>Fecha</Label>
+            <DatePicker id={`${formId}-date`} value={date} onChange={setDate} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor={`${formId}-description`}>Descripción (opcional)</Label>
             <Input
-              id="description"
-              placeholder={savingToGoal ? "Ej: Aporte de este mes" : "Ej: Supermercado del mes"}
+              id={`${formId}-description`}
+              placeholder={mode === "saving" ? "Ej: Aporte del mes" : "Ej: Supermercado"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="date">Fecha</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <DialogFooter>
-            <Button type="submit">{transaction ? "Guardar cambios" : "Agregar"}</Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        {error && (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
+        )}
+      </form>
+    </ResponsiveDialog>
   );
 }

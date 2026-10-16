@@ -11,6 +11,18 @@ const currencyFormatter = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
 });
 
+const compactFormatter = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+/** Short amount for chart axes: "$123", "$45 mil", "$1,2 M". */
+export function formatCompactCurrency(value: number): string {
+  return compactFormatter.format(Math.round(value));
+}
+
 export function formatCurrency(value: number): string {
   return currencyFormatter.format(Math.round(value));
 }

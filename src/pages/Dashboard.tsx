@@ -18,7 +18,7 @@ import { SalaryCard } from "@/components/salary/SalaryCard";
 import { SavedSummaryCard } from "@/components/savings/SavedSummaryCard";
 import { useFinance } from "@/hooks/use-finance";
 import { useStats, sortByDateDesc } from "@/hooks/use-stats";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatCompactCurrency } from "@/lib/utils";
 
 const CATEGORY_COLORS = [
   "#10b981",
@@ -137,8 +137,8 @@ export function Dashboard() {
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => `${Math.round(v / 1000)}k`}
-                  width={40}
+                  tickFormatter={(v: number) => formatCompactCurrency(v)}
+                  width={56}
                 />
                 <Tooltip
                   cursor={{ fill: "var(--muted)", opacity: 0.3 }}

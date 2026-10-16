@@ -14,9 +14,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
-      // Fail instead of silently moving to 5174: Better Auth only trusts the
-      // origins listed in the backend's FRONTEND_URLS.
-      port: 5173,
+      port: 5174,
       strictPort: true,
       // In development the API is reached through this proxy, so the session
       // cookie is first-party and no CORS is involved.
