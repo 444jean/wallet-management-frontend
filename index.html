@@ -7,20 +7,33 @@
     <meta name="theme-color" content="#4c1d95" />
     <title>Mi Billetera — Gastos, Ingresos y Ahorros</title>
     <script>
-      // Aplica el tema guardado antes de pintar para evitar el parpadeo (FOUC).
+      // Apply the cached theme and palette before the first paint (no flash).
+      // Keep the palette list and colors in sync with src/lib/palettes.ts.
       (function () {
+        var colors = {
+          purple: ["#4c1d95", "#8b5cf6"],
+          red: ["#b4123a", "#e5486a"],
+          pink: ["#c2387a", "#f3a9cb"],
+          green: ["#2f6b2a", "#86cf6f"],
+          amber: ["#b45a0c", "#f6b93f"],
+        };
+        var root = document.documentElement;
         try {
           var t = localStorage.getItem("wallet-management:theme");
-          if (!t) {
-            t = window.matchMedia("(prefers-color-scheme: light)").matches
-              ? "light"
-              : "dark";
+          if (t !== "light" && t !== "dark") {
+            t = window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
           }
-          var root = document.documentElement;
+          var p = localStorage.getItem("wallet-management:palette");
+          if (!colors[p]) p = "purple";
           root.classList.toggle("dark", t === "dark");
           root.style.colorScheme = t;
+          root.dataset.palette = p;
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute("content", colors[p][t === "dark" ? 1 : 0]);
         } catch (e) {
-          document.documentElement.classList.add("dark");
+          root.classList.add("dark");
+          root.dataset.palette = "purple";
         }
       })();
     </script>

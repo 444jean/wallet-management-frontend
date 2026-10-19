@@ -13,5 +13,5 @@ Reglas que nunca se saltan (detalle en `AGENTS.md`):
 - Nunca leer ni escribir `.env`; nada secreto en variables `VITE_*`.
 - Proponer el plan y esperar aprobacion antes de construir algo nuevo o grande.
 - NUNCA commitear ni pushear: solo el usuario hace commits. Dejar los cambios en el working tree.
-- La API se llama solo por el mismo origen (`/api` relativo via `src/lib/api.ts`); el dev server corre fijo en el puerto 5173.
+- La API se llama solo por el mismo origen (`/api` relativo via `src/lib/api.ts`); el dev server corre fijo en el puerto 5174.
 - pnpm; validar con `pnpm build`.

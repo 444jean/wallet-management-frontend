@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { AppearanceSync } from "@/components/layout/AppearanceSync";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { StatusBanners } from "@/components/layout/StatusBanners";
@@ -33,6 +34,7 @@ export function AppLayout() {
 
   return (
     <SidebarProvider>
+      <AppearanceSync />
       <AppSidebar />
       <SidebarInset>
         <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 px-4 backdrop-blur">

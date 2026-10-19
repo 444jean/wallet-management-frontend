@@ -1,8 +1,18 @@
 import { createAuthClient } from "better-auth/react";
+import { inferAdditionalFields } from "better-auth/client/plugins";
 import { API_URL } from "@/lib/api";
 
 export const authClient = createAuthClient({
   baseURL: API_URL || window.location.origin,
+  plugins: [
+    // Appearance preferences stored on the user (T08), see the backend's auth.ts.
+    inferAdditionalFields({
+      user: {
+        palette: { type: "string", required: false },
+        theme: { type: "string", required: false },
+      },
+    }),
+  ],
 });
 
 const AUTH_ERRORS: Record<string, string> = {

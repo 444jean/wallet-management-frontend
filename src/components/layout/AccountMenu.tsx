@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { LogOut, Palette } from "lucide-react";
+import { AppearanceDialog } from "@/components/layout/AppearanceDialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -9,7 +10,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useTheme } from "@/hooks/use-theme";
 import { authClient } from "@/lib/auth-client";
 
 export function initials(name: string): string {
@@ -33,7 +33,7 @@ async function signOut() {
   window.location.assign("/login");
 }
 
-/** Account dropdown (theme + sign out). `trigger` is the element that opens it. */
+/** Account dropdown (appearance + sign out). `trigger` is the element that opens it. */
 export function AccountMenu({
   trigger,
   side = "bottom",
@@ -44,31 +44,39 @@ export function AccountMenu({
   align?: "start" | "center" | "end";
 }) {
   const { data: session } = authClient.useSession();
-  const { theme, toggleTheme } = useTheme();
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   if (!session) return null;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent side={side} align={align} className="w-60">
-        <DropdownMenuLabel className="flex items-center gap-3 font-normal">
-          <UserAvatar name={session.user.name} className="size-9" />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">{session.user.name}</p>
-            <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={toggleTheme}>
-          {theme === "dark" ? <Sun /> : <Moon />}
-          {theme === "dark" ? "Tema claro" : "Tema oscuro"}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onSelect={signOut}>
-          <LogOut />
-          Cerrar sesión
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+        <DropdownMenuContent side={side} align={align} className="w-60">
+          <DropdownMenuLabel className="flex items-center gap-3 font-normal">
+            <UserAvatar name={session.user.name} className="size-9" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-medium">{session.user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={() => {
+              // Let the menu finish closing before opening the dialog.
+              window.setTimeout(() => setAppearanceOpen(true), 150);
+            }}
+          >
+            <Palette />
+            Apariencia
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onSelect={signOut}>
+            <LogOut />
+            Cerrar sesión
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AppearanceDialog open={appearanceOpen} onOpenChange={setAppearanceOpen} />
+    </>
   );
 }
