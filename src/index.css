@@ -59,7 +59,7 @@
   --card-foreground: oklch(0.97 0.005 300);
   --popover: oklch(0.17 0.02 300);
   --popover-foreground: oklch(0.97 0.005 300);
-  --primary: oklch(0.6 0.22 293);
+  --primary: oklch(0.54 0.25 293);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.23 0.04 298);
   --secondary-foreground: oklch(0.97 0.005 300);
@@ -70,14 +70,14 @@
   --destructive: oklch(0.65 0.2 25);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.6 0.22 293);
+  --ring: oklch(0.54 0.25 293);
 
   --income: oklch(0.72 0.17 160);
   --income-foreground: oklch(0.15 0.02 160);
   --expense: oklch(0.68 0.2 25);
   --expense-foreground: oklch(0.15 0.02 25);
 
-  --chart-1: oklch(0.6 0.22 293);
+  --chart-1: oklch(0.54 0.25 293);
   --chart-2: oklch(0.72 0.17 160);
   --chart-3: oklch(0.68 0.2 25);
   --chart-4: oklch(0.72 0.15 300);
@@ -85,12 +85,12 @@
 
   --sidebar: oklch(0.1 0.01 300);
   --sidebar-foreground: oklch(0.97 0.005 300);
-  --sidebar-primary: oklch(0.6 0.22 293);
+  --sidebar-primary: oklch(0.54 0.25 293);
   --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.22 0.04 298);
   --sidebar-accent-foreground: oklch(0.97 0.005 300);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.6 0.22 293);
+  --sidebar-ring: oklch(0.54 0.25 293);
 }
 
 /*
@@ -180,19 +180,19 @@
 }
 
 .dark[data-palette="green"] {
-  --primary: oklch(0.76 0.16 135);
-  --primary-foreground: oklch(0.18 0.04 140);
-  --ring: oklch(0.76 0.16 135);
+  --primary: oklch(0.56 0.15 145);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.56 0.15 145);
   --secondary: oklch(0.24 0.04 140);
   --secondary-foreground: oklch(0.97 0.005 140);
   --accent: oklch(0.26 0.05 140);
   --accent-foreground: oklch(0.97 0.005 140);
-  --chart-1: oklch(0.76 0.16 135);
-  --sidebar-primary: oklch(0.76 0.16 135);
-  --sidebar-primary-foreground: oklch(0.18 0.04 140);
+  --chart-1: oklch(0.56 0.15 145);
+  --sidebar-primary: oklch(0.56 0.15 145);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
   --sidebar-accent: oklch(0.26 0.05 140);
   --sidebar-accent-foreground: oklch(0.97 0.005 140);
-  --sidebar-ring: oklch(0.76 0.16 135);
+  --sidebar-ring: oklch(0.56 0.15 145);
 }
 
 :root[data-palette="amber"]:not(.dark) {
@@ -288,40 +288,21 @@
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* Smooth color crossfade while switching theme (only during the switch, so
-   regular hovers stay fast). */
-.theme-transition,
-.theme-transition *,
-.theme-transition *::before,
-.theme-transition *::after {
-  transition:
-    background-color 300ms ease,
-    border-color 300ms ease,
-    color 300ms ease,
-    fill 300ms ease,
-    stroke 300ms ease !important;
-  transition-delay: 0ms !important;
-}
-
-/* Circular reveal with the View Transitions API: the JS clip-path drives the
-   animation, so the browser's default crossfade is disabled. */
-::view-transition-old(root),
-::view-transition-new(root) {
+/* Appearance changes run inside a View Transition (animateAppearanceChange in
+   use-theme.tsx). Theme toggle: circular reveal driven by a JS clip-path, so
+   the default crossfade is disabled. Appearance dialog: short crossfade. */
+html[data-theme-reveal]::view-transition-old(root),
+html[data-theme-reveal]::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
 }
-::view-transition-old(root) {
+html[data-theme-reveal]::view-transition-old(root) {
   z-index: 1;
 }
-::view-transition-new(root) {
+html[data-theme-reveal]::view-transition-new(root) {
   z-index: 2;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .theme-transition,
-  .theme-transition *,
-  .theme-transition *::before,
-  .theme-transition *::after {
-    transition: none !important;
-  }
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
 }

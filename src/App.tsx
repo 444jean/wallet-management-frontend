@@ -9,10 +9,13 @@ import { AuthPage } from "@/pages/AuthPage";
 import { Dashboard } from "@/pages/Dashboard";
 import { Transactions } from "@/pages/Transactions";
 import { Savings } from "@/pages/Savings";
+import { Account } from "@/pages/Account";
+import { TwoFactorPage } from "@/pages/TwoFactorPage";
 
 const router = createBrowserRouter([
   { path: "/login", element: <AuthPage mode="login" /> },
   { path: "/registro", element: <AuthPage mode="register" /> },
+  { path: "/2fa", element: <TwoFactorPage /> },
   {
     path: "/",
     element: (
@@ -29,6 +32,7 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: "transacciones", element: <Transactions /> },
       { path: "ahorros", element: <Savings /> },
+      { path: "cuenta", element: <Account /> },
     ],
   },
 ]);

@@ -3,7 +3,7 @@ import { ResponsiveDialog } from "@/components/common/ResponsiveDialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { useTheme, type Theme } from "@/hooks/use-theme";
+import { animateAppearanceChange, useTheme, type Theme } from "@/hooks/use-theme";
 import { PALETTES, PALETTE_INFO } from "@/lib/palettes";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ export function AppearanceDialog({ open, onOpenChange }: Props) {
                   aria-checked={selected}
                   aria-label={info.label}
                   title={info.label}
-                  onClick={() => setPalette(id)}
+                  onClick={() => animateAppearanceChange(() => setPalette(id))}
                   className="group flex flex-col items-center gap-1.5 rounded-xl p-1 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   <span
@@ -70,7 +70,7 @@ export function AppearanceDialog({ open, onOpenChange }: Props) {
             type="single"
             variant="outline"
             value={theme}
-            onValueChange={(v) => v && setTheme(v as Theme)}
+            onValueChange={(v) => v && animateAppearanceChange(() => setTheme(v as Theme))}
             className="w-full"
           >
             <ToggleGroupItem value="light" className="h-10 flex-1">
