@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { LogOut, Palette } from "lucide-react";
+import { Link } from "react-router-dom";
+import { LogOut, Palette, UserCog } from "lucide-react";
 import { AppearanceDialog } from "@/components/layout/AppearanceDialog";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -33,7 +34,7 @@ async function signOut() {
   window.location.assign("/login");
 }
 
-/** Account dropdown (appearance + sign out). `trigger` is the element that opens it. */
+/** Account dropdown (account page, appearance, sign out). `trigger` is the element that opens it. */
 export function AccountMenu({
   trigger,
   side = "bottom",
@@ -60,6 +61,12 @@ export function AccountMenu({
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/cuenta">
+              <UserCog />
+              Cuenta y seguridad
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem
             onSelect={() => {
               // Let the menu finish closing before opening the dialog.

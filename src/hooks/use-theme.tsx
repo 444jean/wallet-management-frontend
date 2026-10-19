@@ -2,12 +2,12 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { flushSync } from "react-dom";
 import { DEFAULT_PALETTE, PALETTE_INFO, isPalette, type Palette } from "@/lib/palettes";
 
 export type Theme = "light" | "dark";
@@ -18,7 +18,8 @@ const PALETTE_KEY = "wallet-management:palette";
 interface ThemeContextValue {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  toggleTheme: () => void;
+  /** Animated switch; `origin` (viewport px) centers the circular reveal. */
+  toggleTheme: (origin?: { x: number; y: number }) => void;
   palette: Palette;
   setPalette: (palette: Palette) => void;
 }
@@ -65,6 +66,52 @@ function applyAppearance(theme: Theme, palette: Palette) {
     ?.setAttribute("content", PALETTE_INFO[palette][theme]);
 }
 
+type DocWithVT = Document & {
+  startViewTransition?: (cb: () => void) => {
+    ready: Promise<void>;
+    finished: Promise<void>;
+  };
+};
+
+/**
+ * Runs an appearance change inside a View Transition: a circular reveal from
+ * `origin` (theme toggle) or the browser's crossfade (Appearance dialog).
+ * Only two page snapshots are animated, which stays smooth; transitioning the
+ * colors of every element made the switch stutter. Without View Transitions
+ * (or with reduced motion) the change is instant.
+ */
+export function animateAppearanceChange(
+  update: () => void,
+  origin?: { x: number; y: number },
+) {
+  const doc = document as DocWithVT;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!doc.startViewTransition || reduced) {
+    update();
+    return;
+  }
+
+  const root = document.documentElement;
+  if (origin) root.dataset.themeReveal = "";
+  const transition = doc.startViewTransition(() => flushSync(update));
+  if (!origin) return;
+
+  const { x, y } = origin;
+  const endRadius = Math.hypot(
+    Math.max(x, window.innerWidth - x),
+    Math.max(y, window.innerHeight - y),
+  );
+  transition.ready.then(() => {
+    root.animate(
+      {
+        clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`],
+      },
+      { duration: 450, easing: "ease-in-out", pseudoElement: "::view-transition-new(root)" },
+    );
+  });
+  transition.finished.finally(() => delete root.dataset.themeReveal);
+}
+
 /**
  * Theme (light/dark) and brand palette. Cached in localStorage so the first
  * paint is right (see the inline script in index.html); AppearanceSync keeps
@@ -73,22 +120,10 @@ function applyAppearance(theme: Theme, palette: Palette) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
   const [palette, setPaletteState] = useState<Palette>(getInitialPalette);
-  const firstRun = useRef(true);
-  const cleanupTimer = useRef<number | undefined>(undefined);
 
-  useEffect(() => {
-    if (!firstRun.current) {
-      // Smooth color crossfade only while switching.
-      const root = document.documentElement;
-      root.classList.add("theme-transition");
-      window.clearTimeout(cleanupTimer.current);
-      cleanupTimer.current = window.setTimeout(
-        () => root.classList.remove("theme-transition"),
-        320,
-      );
-    }
-    firstRun.current = false;
-
+  // Layout effect: the DOM must change inside flushSync, before the View
+  // Transition captures the new snapshot.
+  useLayoutEffect(() => {
     applyAppearance(theme, palette);
     writeStorage(THEME_KEY, theme);
     writeStorage(PALETTE_KEY, palette);
@@ -96,7 +131,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = useCallback((next: Theme) => setThemeState(next), []);
   const toggleTheme = useCallback(
-    () => setThemeState((t) => (t === "dark" ? "light" : "dark")),
+    (origin?: { x: number; y: number }) =>
+      animateAppearanceChange(
+        () => setThemeState((t) => (t === "dark" ? "light" : "dark")),
+        origin,
+      ),
     [],
   );
   const setPalette = useCallback((next: Palette) => setPaletteState(next), []);

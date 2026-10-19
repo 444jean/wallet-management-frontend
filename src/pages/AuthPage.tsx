@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { AlertCircle, ArrowRightLeft, Check, Loader2, PiggyBank, Repeat, Wallet } from "lucide-react";
+import { AlertCircle, ArrowRightLeft, Loader2, PiggyBank, Repeat, Wallet } from "lucide-react";
+import { PasswordChecklist } from "@/components/common/PasswordChecklist";
 import { PasswordInput } from "@/components/common/PasswordInput";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -8,12 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { passwordRules, passwordRulesError } from "@/lib/password-policy";
 import { cn } from "@/lib/utils";
 
-const MIN_PASSWORD = 8;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-type Field = "name" | "email" | "password";
+type Field = "name" | "email" | "password" | "confirm";
 
 const FEATURES = [
   { icon: ArrowRightLeft, text: "Registra ingresos y gastos en segundos, desde el celular o el PC." },
@@ -21,7 +22,7 @@ const FEATURES = [
   { icon: Repeat, text: "Tu sueldo se registra solo cada mes." },
 ];
 
-function Brand({ inverted = false }: { inverted?: boolean }) {
+export function Brand({ inverted = false }: { inverted?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
       <div
@@ -73,6 +74,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [invalid, setInvalid] = useState<Field | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -84,6 +86,13 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     setError(message);
   }
 
+  /** Updates a field and drops the previous error: it may no longer apply. */
+  function edit(setter: (value: string) => void, value: string) {
+    setter(value);
+    setError("");
+    setInvalid(null);
+  }
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -91,17 +100,21 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     if (isRegister && !name.trim()) return fail("name", "Ingresa tu nombre.");
     if (!EMAIL_RE.test(email.trim())) return fail("email", "Ingresa un correo válido.");
     if (!password) return fail("password", "Ingresa tu contraseña.");
-    if (isRegister && password.length < MIN_PASSWORD) {
-      return fail("password", `La contraseña debe tener al menos ${MIN_PASSWORD} caracteres.`);
+    if (isRegister) {
+      const rulesError = passwordRulesError(password);
+      if (rulesError) return fail("password", rulesError);
+      if (password !== confirm) return fail("confirm", "Las contraseñas no coinciden.");
     }
 
     setSubmitting(true);
     try {
-      const { error: authError } = isRegister
+      const { data, error: authError } = isRegister
         ? await authClient.signUp.email({ name: name.trim(), email: email.trim(), password })
         : await authClient.signIn.email({ email: email.trim(), password });
       if (authError) return fail(null, authErrorMessage(authError));
-      navigate("/", { replace: true });
+      // 2FA users get no session yet: the code is asked on /2fa.
+      const needsTwoFactor = !!data && "twoFactorRedirect" in data && data.twoFactorRedirect;
+      navigate(needsTwoFactor ? "/2fa" : "/", { replace: true });
     } catch (err) {
       console.error(err);
       fail(null, "No se pudo conectar con el servidor.");
@@ -110,7 +123,6 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
     }
   }
 
-  const passwordOk = password.length >= MIN_PASSWORD;
 
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
@@ -146,7 +158,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                     autoComplete="name"
                     placeholder="Tu nombre"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => edit(setName, e.target.value)}
                     aria-invalid={invalid === "name"}
                     className="h-11"
                   />
@@ -161,7 +173,7 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   autoComplete="email"
                   placeholder="tu@correo.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => edit(setEmail, e.target.value)}
                   aria-invalid={invalid === "email"}
                   className="h-11"
                 />
@@ -172,22 +184,25 @@ export function AuthPage({ mode }: { mode: "login" | "register" }) {
                   id="password"
                   autoComplete={isRegister ? "new-password" : "current-password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => edit(setPassword, e.target.value)}
                   aria-invalid={invalid === "password"}
                   className="h-11"
                 />
-                {isRegister && (
-                  <p
-                    className={cn(
-                      "flex items-center gap-1.5 text-xs transition-colors",
-                      passwordOk ? "text-income" : "text-muted-foreground",
-                    )}
-                  >
-                    <Check className={cn("size-3.5", !passwordOk && "opacity-40")} />
-                    Al menos {MIN_PASSWORD} caracteres
-                  </p>
-                )}
               </div>
+              {isRegister && (
+                <div className="space-y-2">
+                  <Label htmlFor="confirm">Repite la contraseña</Label>
+                  <PasswordInput
+                    id="confirm"
+                    autoComplete="new-password"
+                    value={confirm}
+                    onChange={(e) => edit(setConfirm, e.target.value)}
+                    aria-invalid={invalid === "confirm"}
+                    className="h-11"
+                  />
+                  <PasswordChecklist rules={passwordRules(password, confirm)} className="pt-1" />
+                </div>
+              )}
 
               {error && (
                 <Alert variant="destructive">

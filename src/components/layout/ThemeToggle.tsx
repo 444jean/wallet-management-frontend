@@ -1,53 +1,16 @@
-import { flushSync } from "react-dom";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
-
-type DocWithVT = Document & {
-  startViewTransition?: (cb: () => void) => { ready: Promise<void> };
-};
 
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === "dark";
 
   function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
-    const doc = document as DocWithVT;
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-    if (!doc.startViewTransition || prefersReduced) {
-      toggleTheme();
-      return;
-    }
-
+    // The circular reveal starts at the button.
     const rect = e.currentTarget.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y),
-    );
-
-    const transition = doc.startViewTransition(() => {
-      flushSync(() => toggleTheme());
-    });
-
-    transition.ready.then(() => {
-      document.documentElement.animate(
-        {
-          clipPath: [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${endRadius}px at ${x}px ${y}px)`,
-          ],
-        },
-        {
-          duration: 450,
-          easing: "ease-in-out",
-          pseudoElement: "::view-transition-new(root)",
-        },
-      );
-    });
+    toggleTheme({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
   }
 
   return (
