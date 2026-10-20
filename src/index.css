@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Mi Billetera palette
+ * Mis Chauchitas palette
  * - Light: deep purple on white.
  * - Dark: purple on black.
  * Income (green) and expense (red) keep their meaning in both themes.
@@ -305,4 +305,24 @@ html[data-theme-reveal]::view-transition-new(root) {
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 200ms;
+}
+
+/* Login brand panel (T14, AuthPage and SavingsCurve). */
+@keyframes auth-drift {
+  to {
+    transform: translate(-2.5rem, 2.5rem) scale(1.08);
+  }
+}
+@keyframes curve-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes coin-float {
+  to {
+    transform: translateY(-8px);
+  }
 }
