@@ -53,7 +53,7 @@ export function MobileNav() {
             align="end"
             trigger={
               <button type="button" className={cn(tabClass, "text-muted-foreground")}>
-                <UserAvatar name={session.user.name} className="size-6" />
+                <UserAvatar name={session.user.name} image={session.user.image} className="size-6" />
                 Cuenta
               </button>
             }

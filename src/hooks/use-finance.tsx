@@ -44,7 +44,8 @@ function transactionBody(tx: Omit<Transaction, "id">) {
 }
 
 function goalBody(goal: Omit<SavingsGoal, "id">) {
-  return json({ ...goal, deadline: goal.deadline || null });
+  // null clears the field on PATCH (omitted fields are kept).
+  return json({ ...goal, deadline: goal.deadline || null, institution: goal.institution || null });
 }
 
 export function FinanceProvider({ children }: { children: ReactNode }) {

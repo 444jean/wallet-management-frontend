@@ -13,7 +13,8 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
-import { projectGoal } from "@/lib/savings";
+import { getInstitution } from "@/lib/institutions";
+import { FUND_HORIZON_MONTHS, isFund, projectGoal } from "@/lib/savings";
 import { cn, formatCompactCurrency, formatCurrency, formatDate, formatMonth } from "@/lib/utils";
 import type { SavingsGoal } from "@/types";
 
@@ -46,17 +47,24 @@ export function GoalDetail({ goal, open, onOpenChange, onContribute, onEdit }: P
   const projection = useMemo(() => projectGoal(goal), [goal]);
   const summary = summarizeGoal(goal, projection);
   const chartId = `fill-${goal.id}`;
+  const fund = isFund(goal);
+  const institution = getInstitution(goal.institution);
 
   return (
     <ResponsiveSheet
       open={open}
       onOpenChange={onOpenChange}
       title={goal.name}
-      description={`Meta de ${formatCurrency(goal.target)}`}
+      description={[
+        institution?.name,
+        fund ? "Fondo sin objetivo" : `Meta de ${formatCurrency(goal.target ?? 0)}`,
+      ]
+        .filter(Boolean)
+        .join(" · ")}
       footer={
         <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onEdit}>
-            Editar meta
+            {fund ? "Editar fondo" : "Editar meta"}
           </Button>
           <Button onClick={onContribute}>
             <PiggyBank /> Aportar
@@ -72,22 +80,37 @@ export function GoalDetail({ goal, open, onOpenChange, onContribute, onEdit }: P
               {STATUS_LABEL[summary.status]}
             </Badge>
           </div>
-          <Progress value={summary.pct} className="h-2.5" />
-          <p className="text-xs text-muted-foreground">
-            {summary.pct}% · faltan {formatCurrency(summary.remaining)}
-          </p>
+          {!fund && (
+            <>
+              <Progress value={summary.pct} className="h-2.5" />
+              <p className="text-xs text-muted-foreground">
+                {summary.pct}% · faltan {formatCurrency(summary.remaining)}
+              </p>
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Stat
-            icon={CalendarClock}
-            label="Tiempo estimado"
-            value={summary.status === "reached" ? "¡Cumplida!" : summary.timeLabel}
-            hint={projection.targetDate && summary.status !== "reached" ? `~ ${formatMonth(projection.targetDate)}` : undefined}
-          />
+          {fund ? (
+            <Stat
+              icon={CalendarClock}
+              label={`En ${FUND_HORIZON_MONTHS} meses`}
+              value={formatCurrency(Math.round(projection.finalBalance))}
+              hint="Saldo proyectado"
+            />
+          ) : (
+            <Stat
+              icon={CalendarClock}
+              label="Tiempo estimado"
+              value={summary.status === "reached" ? "¡Cumplida!" : summary.timeLabel}
+              hint={projection.targetDate && summary.status !== "reached" ? `~ ${formatMonth(projection.targetDate)}` : undefined}
+            />
+          )}
           <Stat icon={TrendingUp} label="Aporte mensual" value={formatCurrency(goal.monthlyContribution)} />
           <Stat icon={Percent} label="Interés anual" value={goal.annualRate > 0 ? `${goal.annualRate}%` : "Sin interés"} />
-          <Stat icon={Flag} label="Fecha límite" value={goal.deadline ? formatDate(goal.deadline) : "Sin fecha"} />
+          {!fund && (
+            <Stat icon={Flag} label="Fecha límite" value={goal.deadline ? formatDate(goal.deadline) : "Sin fecha"} />
+          )}
         </div>
 
         <div className="space-y-2">
@@ -109,13 +132,15 @@ export function GoalDetail({ goal, open, onOpenChange, onContribute, onEdit }: P
                 <XAxis dataKey="label" tickLine={false} axisLine={false} interval="preserveStartEnd" minTickGap={28} />
                 <YAxis tickLine={false} axisLine={false} width={56} tickFormatter={(v: number) => formatCompactCurrency(v)} />
                 <ChartTooltip content={<ChartTooltipContent formatter={currencyTooltip(projectionConfig)} />} />
-                <ReferenceLine y={goal.target} stroke="var(--muted-foreground)" strokeDasharray="4 4" />
+                {!fund && <ReferenceLine y={goal.target ?? 0} stroke="var(--muted-foreground)" strokeDasharray="4 4" />}
                 <Area type="monotone" dataKey="balance" stroke="var(--color-balance)" strokeWidth={2} fill={`url(#${chartId})`} />
               </AreaChart>
             </ChartContainer>
           )}
           <p className="text-xs text-muted-foreground">
-            La línea punteada es el objetivo. Supone el aporte mensual y la tasa actuales.
+            {fund
+              ? `Próximos ${FUND_HORIZON_MONTHS} meses con el aporte mensual y la tasa actuales.`
+              : "La línea punteada es el objetivo. Supone el aporte mensual y la tasa actuales."}
           </p>
         </div>
       </div>
