@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { LogOut, Palette, UserCog } from "lucide-react";
 import { AppearanceDialog } from "@/components/layout/AppearanceDialog";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
+import { avatarSrc } from "@/lib/avatar";
 
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -19,9 +20,20 @@ export function initials(name: string): string {
   return letters.toUpperCase();
 }
 
-export function UserAvatar({ name, className }: { name: string; className?: string }) {
+/** Profile picture (T12), with the initials while it loads or when there is none. */
+export function UserAvatar({
+  name,
+  image,
+  className,
+}: {
+  name: string;
+  image?: string | null;
+  className?: string;
+}) {
+  const src = avatarSrc(image);
   return (
     <Avatar className={className}>
+      {src && <AvatarImage src={src} alt="" className="object-cover" />}
       <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
         {initials(name)}
       </AvatarFallback>
@@ -54,7 +66,7 @@ export function AccountMenu({
         <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
         <DropdownMenuContent side={side} align={align} className="w-60">
           <DropdownMenuLabel className="flex items-center gap-3 font-normal">
-            <UserAvatar name={session.user.name} className="size-9" />
+            <UserAvatar name={session.user.name} image={session.user.image} className="size-9" />
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{session.user.name}</p>
               <p className="truncate text-xs text-muted-foreground">{session.user.email}</p>

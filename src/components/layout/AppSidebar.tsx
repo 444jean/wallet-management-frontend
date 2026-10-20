@@ -101,7 +101,7 @@ export function AppSidebar() {
                     size="lg"
                     className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                   >
-                    <UserAvatar name={session.user.name} className="size-8 rounded-lg" />
+                    <UserAvatar name={session.user.name} image={session.user.image} className="size-8 rounded-lg" />
                     <div className="grid flex-1 text-left leading-tight">
                       <span className="truncate text-sm font-medium">{session.user.name}</span>
                       <span className="truncate text-xs text-muted-foreground">

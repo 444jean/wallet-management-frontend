@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AvatarCard } from "@/components/account/AvatarCard";
 import { ChangePasswordCard } from "@/components/account/ChangePasswordCard";
 import { DeleteAccountCard } from "@/components/account/DeleteAccountCard";
 import { SessionsCard } from "@/components/account/SessionsCard";
@@ -20,7 +21,7 @@ export function Account() {
 
       {session && (
         <div className="flex items-center gap-3">
-          <UserAvatar name={session.user.name} className="size-11" />
+          <UserAvatar name={session.user.name} image={session.user.image} className="size-11" />
           <div className="min-w-0">
             <p className="truncate font-medium">{session.user.name}</p>
             <p className="truncate text-sm text-muted-foreground">{session.user.email}</p>
@@ -28,6 +29,7 @@ export function Account() {
         </div>
       )}
 
+      <AvatarCard />
       <SessionsCard refreshKey={sessionsKey} />
       <ChangePasswordCard onChanged={() => setSessionsKey((k) => k + 1)} />
       <TwoFactorCard />

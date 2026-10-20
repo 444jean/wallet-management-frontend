@@ -24,11 +24,14 @@ export interface SalaryConfig {
 export interface SavingsGoal {
   id: string;
   name: string;
-  target: number;
+  /** null = "Fondo": savings without a target amount. */
+  target: number | null;
   current: number;
   monthlyContribution: number;
   annualRate: number;
   deadline?: string;
+  /** Bank or wallet where it is kept, a code from `lib/institutions.ts`. */
+  institution?: string;
 }
 
 export interface FinanceData {

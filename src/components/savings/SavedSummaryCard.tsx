@@ -4,14 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useFinance } from "@/hooks/use-finance";
+import { goalsTotals } from "@/lib/savings";
 import { formatCurrency } from "@/lib/utils";
 
 export function SavedSummaryCard() {
   const { goals } = useFinance();
 
-  const totalSaved = goals.reduce((sum, g) => sum + g.current, 0);
-  const totalTarget = goals.reduce((sum, g) => sum + g.target, 0);
-  const pct = totalTarget > 0 ? Math.min(100, Math.round((totalSaved / totalTarget) * 100)) : 0;
+  const { totalSaved, totalTarget, pct } = goalsTotals(goals);
 
   return (
     <Card className="justify-center py-5">
@@ -26,12 +25,12 @@ export function SavedSummaryCard() {
               <p className="text-2xl font-bold text-primary">{formatCurrency(totalSaved)}</p>
               {goals.length > 0 ? (
                 <p className="text-xs text-muted-foreground">
-                  de {formatCurrency(totalTarget)} · {goals.length}{" "}
-                  {goals.length === 1 ? "meta" : "metas"}
+                  {totalTarget > 0 && `de ${formatCurrency(totalTarget)} · `}
+                  {goals.length} {goals.length === 1 ? "ahorro" : "ahorros"}
                 </p>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Aún no tienes metas de ahorro.
+                  Aún no tienes ahorros.
                 </p>
               )}
             </div>
@@ -39,15 +38,15 @@ export function SavedSummaryCard() {
 
           <Button asChild variant="ghost" size="sm">
             <Link to="/ahorros">
-              Ver metas <ArrowRight className="h-4 w-4" />
+              Ver ahorros <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
         </div>
 
-        {goals.length > 0 && (
+        {totalTarget > 0 && (
           <div className="mt-4 space-y-1.5">
             <Progress value={pct} />
-            <p className="text-right text-xs text-muted-foreground">{pct}% del objetivo</p>
+            <p className="text-right text-xs text-muted-foreground">{pct}% del objetivo de tus metas</p>
           </div>
         )}
       </CardContent>
