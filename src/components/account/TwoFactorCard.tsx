@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { APP_NAME } from "@/lib/brand";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
 
 type Action = "enable" | "disable" | "regenerate";
@@ -60,7 +61,7 @@ function BackupCodes({ codes }: { codes: string[] }) {
   }
 
   function download() {
-    const blob = new Blob([`Mi Billetera - códigos de respaldo\n\n${text}\n`], { type: "text/plain" });
+    const blob = new Blob([`${APP_NAME} - códigos de respaldo\n\n${text}\n`], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

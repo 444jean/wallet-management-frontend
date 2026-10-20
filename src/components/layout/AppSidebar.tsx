@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { ChevronsUpDown, Plus, Wallet } from "lucide-react";
+import { ChevronsUpDown, Plus } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,9 +12,11 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Logo } from "@/components/brand/Logo";
 import { AccountMenu, UserAvatar } from "@/components/layout/AccountMenu";
 import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { TransactionDialog } from "@/components/transactions/TransactionDialog";
+import { APP_NAME, APP_TAGLINE } from "@/lib/brand";
 import { authClient } from "@/lib/auth-client";
 
 function isActive(pathname: string, to: string, end?: boolean) {
@@ -33,12 +35,13 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <NavLink to="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Wallet className="size-4" />
-                </div>
+                {/* Wrapped: the menu button shrinks direct <svg> children to size-4. */}
+                <span className="flex shrink-0">
+                  <Logo className="size-8" />
+                </span>
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate text-sm font-semibold">Mi Billetera</span>
-                  <span className="truncate text-xs text-muted-foreground">Finanzas personales</span>
+                  <span className="truncate text-sm font-semibold">{APP_NAME}</span>
+                  <span className="truncate text-xs text-muted-foreground">{APP_TAGLINE}</span>
                 </div>
               </NavLink>
             </SidebarMenuButton>

@@ -1,5 +1,5 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { Wallet } from "lucide-react";
+import { Logo } from "@/components/brand/Logo";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -10,6 +10,7 @@ import { NAV_ITEMS } from "@/components/layout/nav-items";
 import { StatusBanners } from "@/components/layout/StatusBanners";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useFinance } from "@/hooks/use-finance";
+import { APP_NAME } from "@/lib/brand";
 
 function PageSkeleton() {
   return (
@@ -42,10 +43,8 @@ export function AppLayout() {
           <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
           <Separator orientation="vertical" className="mr-1 hidden data-[orientation=vertical]:h-4 md:block" />
           <div className="flex items-center gap-2 md:hidden">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Wallet className="size-4" />
-            </div>
-            <span className="text-sm font-semibold">Mi Billetera</span>
+            <Logo className="size-8" />
+            <span className="text-sm font-semibold">{APP_NAME}</span>
           </div>
           <span className="hidden text-sm font-medium md:block">{current?.label}</span>
           <ThemeToggle className="ml-auto" />
