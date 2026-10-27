@@ -7,13 +7,17 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { FinanceData, SalaryConfig, SavingsGoal, Transaction } from "@/types";
+import type { CardPurchase, CreditCard, FinanceData, SalaryConfig, SavingsGoal, Transaction } from "@/types";
 import { api, ApiError, json } from "@/lib/api";
+
+export type CardBody = Omit<CreditCard, "id" | "purchases">;
+export type PurchaseBody = Omit<CardPurchase, "id" | "cardId">;
 
 interface FinanceContextValue {
   transactions: Transaction[];
   goals: SavingsGoal[];
   salary: SalaryConfig | null;
+  cards: CreditCard[];
   /** True until the first snapshot arrives. */
   loading: boolean;
   /** Last failed operation, shown as a banner. */
@@ -26,6 +30,12 @@ interface FinanceContextValue {
   addGoal: (goal: Omit<SavingsGoal, "id">) => Promise<boolean>;
   updateGoal: (id: string, goal: Omit<SavingsGoal, "id">) => Promise<boolean>;
   deleteGoal: (id: string) => Promise<boolean>;
+  addCard: (card: CardBody) => Promise<boolean>;
+  updateCard: (id: string, card: CardBody) => Promise<boolean>;
+  deleteCard: (id: string) => Promise<boolean>;
+  addPurchase: (cardId: string, purchase: PurchaseBody) => Promise<boolean>;
+  updatePurchase: (cardId: string, id: string, purchase: PurchaseBody) => Promise<boolean>;
+  deletePurchase: (cardId: string, id: string) => Promise<boolean>;
   setSalary: (config: SalaryConfig) => Promise<boolean>;
   clearSalary: () => Promise<boolean>;
   resetAll: () => Promise<boolean>;
@@ -34,7 +44,7 @@ interface FinanceContextValue {
 
 const FinanceContext = createContext<FinanceContextValue | null>(null);
 
-const EMPTY: FinanceData = { transactions: [], goals: [], salary: null };
+const EMPTY: FinanceData = { transactions: [], goals: [], salary: null, cards: [] };
 
 function transactionBody(tx: Omit<Transaction, "id">) {
   // `goalId: null` explicitly un-links a transaction that stopped being a
@@ -46,6 +56,10 @@ function transactionBody(tx: Omit<Transaction, "id">) {
 function goalBody(goal: Omit<SavingsGoal, "id">) {
   // null clears the field on PATCH (omitted fields are kept).
   return json({ ...goal, deadline: goal.deadline || null, institution: goal.institution || null });
+}
+
+function cardBody(card: CardBody) {
+  return json({ ...card, institution: card.institution || null });
 }
 
 export function FinanceProvider({ children }: { children: ReactNode }) {
@@ -92,6 +106,16 @@ export function FinanceProvider({ children }: { children: ReactNode }) {
       updateGoal: (id, goal) =>
         run(() => api(`/goals/${id}`, { method: "PATCH", body: goalBody(goal) })),
       deleteGoal: (id) => run(() => api(`/goals/${id}`, { method: "DELETE" })),
+      addCard: (card) => run(() => api("/cards", { method: "POST", body: cardBody(card) })),
+      updateCard: (id, card) =>
+        run(() => api(`/cards/${id}`, { method: "PATCH", body: cardBody(card) })),
+      deleteCard: (id) => run(() => api(`/cards/${id}`, { method: "DELETE" })),
+      addPurchase: (cardId, purchase) =>
+        run(() => api(`/cards/${cardId}/purchases`, { method: "POST", body: json(purchase) })),
+      updatePurchase: (cardId, id, purchase) =>
+        run(() => api(`/cards/${cardId}/purchases/${id}`, { method: "PATCH", body: json(purchase) })),
+      deletePurchase: (cardId, id) =>
+        run(() => api(`/cards/${cardId}/purchases/${id}`, { method: "DELETE" })),
       setSalary: (config) => run(() => api("/salary", { method: "PUT", body: json(config) })),
       clearSalary: () => run(() => api("/salary", { method: "DELETE" })),
       resetAll: () => run(() => api("/finance", { method: "DELETE" })),

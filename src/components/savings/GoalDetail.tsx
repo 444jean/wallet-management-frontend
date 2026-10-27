@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, ReferenceLine, XAxis, YAxis } from "recharts";
-import { CalendarClock, Flag, Percent, PiggyBank, TrendingUp } from "lucide-react";
+import { CalendarClock, Flag, HandCoins, Percent, PiggyBank, TrendingUp } from "lucide-react";
 import { currencyTooltip } from "@/components/common/chart-helpers";
 import { ResponsiveSheet } from "@/components/common/ResponsiveSheet";
 import { STATUS_CLASS, STATUS_LABEL, summarizeGoal } from "@/components/savings/goal-status";
@@ -39,11 +39,12 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onContribute: () => void;
+  onWithdraw: () => void;
   onEdit: () => void;
 }
 
 /** Goal detail with the month-by-month projection. */
-export function GoalDetail({ goal, open, onOpenChange, onContribute, onEdit }: Props) {
+export function GoalDetail({ goal, open, onOpenChange, onContribute, onWithdraw, onEdit }: Props) {
   const projection = useMemo(() => projectGoal(goal), [goal]);
   const summary = summarizeGoal(goal, projection);
   const chartId = `fill-${goal.id}`;
@@ -65,6 +66,9 @@ export function GoalDetail({ goal, open, onOpenChange, onContribute, onEdit }: P
         <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="outline" onClick={onEdit}>
             {fund ? "Editar fondo" : "Editar meta"}
+          </Button>
+          <Button variant="outline" onClick={onWithdraw} disabled={goal.current === 0}>
+            <HandCoins /> Retirar
           </Button>
           <Button onClick={onContribute}>
             <PiggyBank /> Aportar

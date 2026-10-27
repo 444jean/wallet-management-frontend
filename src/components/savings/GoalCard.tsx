@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, MoreVertical, Pencil, PiggyBank, Target, Trash2, Wallet } from "lucide-react";
+import { ChevronRight, HandCoins, MoreVertical, Pencil, PiggyBank, Target, Trash2, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import { GoalDetail } from "@/components/savings/GoalDetail";
@@ -37,6 +37,7 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
   const [detailOpen, setDetailOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   function fromDetail(open: (value: boolean) => void) {
@@ -73,6 +74,9 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
             <DropdownMenuContent align="end">
               <DropdownMenuItem onSelect={() => setEditOpen(true)}>
                 <Pencil /> Editar
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setWithdrawOpen(true)} disabled={goal.current === 0}>
+                <HandCoins /> Retirar
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
@@ -123,10 +127,17 @@ export function GoalCard({ goal }: { goal: SavingsGoal }) {
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onContribute={() => fromDetail(setContributeOpen)}
+        onWithdraw={() => fromDetail(setWithdrawOpen)}
         onEdit={() => fromDetail(setEditOpen)}
       />
       <GoalDialog goal={goal} open={editOpen} onOpenChange={setEditOpen} />
       <TransactionDialog defaultGoalId={goal.id} open={contributeOpen} onOpenChange={setContributeOpen} />
+      <TransactionDialog
+        defaultGoalId={goal.id}
+        defaultDirection="withdraw"
+        open={withdrawOpen}
+        onOpenChange={setWithdrawOpen}
+      />
       <ConfirmDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}

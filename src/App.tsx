@@ -9,6 +9,7 @@ import { AuthPage } from "@/pages/AuthPage";
 import { Dashboard } from "@/pages/Dashboard";
 import { Transactions } from "@/pages/Transactions";
 import { Savings } from "@/pages/Savings";
+import { Cards } from "@/pages/Cards";
 import { Account } from "@/pages/Account";
 import { TwoFactorPage } from "@/pages/TwoFactorPage";
 
@@ -32,6 +33,7 @@ const router = createBrowserRouter([
       { index: true, element: <Dashboard /> },
       { path: "transacciones", element: <Transactions /> },
       { path: "ahorros", element: <Savings /> },
+      { path: "tarjetas", element: <Cards /> },
       { path: "cuenta", element: <Account /> },
     ],
   },

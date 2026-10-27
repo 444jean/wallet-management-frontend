@@ -34,10 +34,38 @@ export interface SavingsGoal {
   institution?: string;
 }
 
+/** A purchase paid in installments on a credit card (T15). Not a transaction. */
+export interface CardPurchase {
+  id: string;
+  cardId: string;
+  description: string;
+  /** Price before interest. */
+  amount: number;
+  installments: number;
+  /** Monthly interest rate in percent; 0 = interest-free. */
+  monthlyRate: number;
+  date: string;
+}
+
+export interface CreditCard {
+  id: string;
+  name: string;
+  /** Issuing bank, a code from `lib/institutions.ts`. */
+  institution?: string;
+  /** Total credit limit ("cupo"). */
+  creditLimit: number;
+  /** Statement closing day (1-31). */
+  closingDay: number;
+  /** Payment due day (1-31). */
+  paymentDay: number;
+  purchases: CardPurchase[];
+}
+
 export interface FinanceData {
   transactions: Transaction[];
   goals: SavingsGoal[];
   salary: SalaryConfig | null;
+  cards: CreditCard[];
 }
 
 export const EXPENSE_CATEGORIES = [

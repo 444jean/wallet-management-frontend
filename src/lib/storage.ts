@@ -15,6 +15,8 @@ export function readLegacyData(): FinanceData | null {
       transactions: parsed.transactions ?? [],
       goals: parsed.goals ?? [],
       salary: parsed.salary ?? null,
+      // The legacy app had no credit cards.
+      cards: [],
     };
     const isEmpty = !data.transactions.length && !data.goals.length && !data.salary;
     return isEmpty ? null : data;
